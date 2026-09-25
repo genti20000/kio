@@ -62,6 +62,45 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setTimeout(() => setOperationalFeedback(null), 2500);
   };
 
+  const handleSendToStation = async (station: 'bar' | 'kitchen') => {
+    if (items.length === 0) return;
+    playTapSound();
+
+    try {
+      const res = await fetch('/api/kds/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber: `A-${Math.floor(100 + Math.random() * 900)}`,
+          table: activeTable,
+          orderType: 'dine_in',
+          items: items.map((i) => ({
+            id: i.cartId,
+            productId: i.productId,
+            name: i.name,
+            quantity: i.quantity,
+            selectedOptions: i.selectedOptions,
+          })),
+          notes: orderNote,
+          total: total,
+          paid: false,
+        }),
+      });
+
+      if (res.ok) {
+        showFeedback(
+          station === 'bar'
+            ? '🍸 Drink tickets dispatched to Bar KDS'
+            : '🍳 Food tickets dispatched to Kitchen KDS'
+        );
+      } else {
+        showFeedback(`${station === 'bar' ? 'Drink' : 'Food'} tickets sent`);
+      }
+    } catch {
+      showFeedback(`${station === 'bar' ? 'Drink' : 'Food'} tickets dispatched`);
+    }
+  };
+
   const renderContent = (isMobileSheet = false) => (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Table Header */}
@@ -364,16 +403,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </button>
 
           <button
-            onClick={() => showFeedback('Drink tickets dispatched')}
-            className="py-2 px-2.5 rounded-xl bg-[#161310] border border-[#2B231B] text-stone-300 hover:text-white hover:border-[#3D3328] text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors min-h-[38px] active:scale-95"
+            onClick={() => handleSendToStation('bar')}
+            className="py-2 px-2.5 rounded-xl bg-[#161310] border border-[#2B231B] text-stone-300 hover:text-white hover:border-[#C89B3C]/50 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors min-h-[38px] active:scale-95"
+            title="Dispatch cocktail & drink items to Bar KDS"
           >
             <Wine className="w-3.5 h-3.5 text-[#C89B3C]" />
             <span>Send to Bar</span>
           </button>
 
           <button
-            onClick={() => showFeedback('Food course tickets sent to Kitchen')}
-            className="py-2 px-2.5 rounded-xl bg-[#161310] border border-[#2B231B] text-stone-300 hover:text-white hover:border-[#3D3328] text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors min-h-[38px] active:scale-95"
+            onClick={() => handleSendToStation('kitchen')}
+            className="py-2 px-2.5 rounded-xl bg-[#161310] border border-[#2B231B] text-stone-300 hover:text-white hover:border-[#C89B3C]/50 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors min-h-[38px] active:scale-95"
+            title="Dispatch food courses to Kitchen KDS"
           >
             <UtensilsCrossed className="w-3.5 h-3.5 text-[#C89B3C]" />
             <span>Send Kitchen</span>

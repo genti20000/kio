@@ -26,6 +26,7 @@ interface TopBarProps {
   isOnline: boolean;
   cartCount?: number;
   onOpenCart?: () => void;
+  onNavigateStation?: (station: 'pos' | 'kitchen' | 'bar') => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -40,6 +41,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   isOnline,
   cartCount = 0,
   onOpenCart,
+  onNavigateStation,
 }) => {
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -107,6 +109,32 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Right: Active Table selector, Mobile Search, Cart & Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Station Switcher Quick Links (Kitchen / Bar) */}
+          {onNavigateStation && (
+            <div className="hidden sm:flex items-center gap-1 bg-[#14120F] border border-[#2A231C] rounded-xl p-0.5">
+              <button
+                onClick={() => {
+                  playTapSound();
+                  onNavigateStation('kitchen');
+                }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:text-white hover:bg-[#1E1914] transition-colors flex items-center gap-1"
+                title="Open Kitchen Display System"
+              >
+                <span>🍳 Kitchen</span>
+              </button>
+              <button
+                onClick={() => {
+                  playTapSound();
+                  onNavigateStation('bar');
+                }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:text-white hover:bg-[#1E1914] transition-colors flex items-center gap-1"
+                title="Open Bar Display System"
+              >
+                <span>🍸 Bar</span>
+              </button>
+            </div>
+          )}
+
           {/* Mobile Search Toggle */}
           <button
             onClick={() => {
@@ -172,6 +200,41 @@ export const TopBar: React.FC<TopBarProps> = ({
                       )}
                     </button>
                   ))}
+
+                  {onNavigateStation && (
+                    <div className="pt-2 mt-2 border-t border-[#2A221A] space-y-1">
+                      <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-[#C89B3C] font-semibold">
+                        Kitchen & Bar Stations
+                      </div>
+                      <button
+                        onClick={() => {
+                          playTapSound();
+                          setShowTableMenu(false);
+                          onNavigateStation('kitchen');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs text-stone-300 hover:bg-[#201C17] flex items-center justify-between min-h-[40px]"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span>🍳 Kitchen KDS Display</span>
+                        </span>
+                        <span className="text-[10px] text-stone-500 font-mono">/kitchen</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          playTapSound();
+                          setShowTableMenu(false);
+                          onNavigateStation('bar');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs text-stone-300 hover:bg-[#201C17] flex items-center justify-between min-h-[40px]"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span>🍸 Bar KDS Display</span>
+                        </span>
+                        <span className="text-[10px] text-stone-500 font-mono">/bar</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}

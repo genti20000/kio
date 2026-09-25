@@ -19,10 +19,48 @@ import { AdminSettingsModal } from './components/AdminSettingsModal.tsx';
 import { CheckoutDiagnosticModal, CheckoutErrorInfo } from './components/CheckoutDiagnosticModal.tsx';
 import { MobileCategoryBar } from './components/MobileCategoryBar.tsx';
 import { MobileCartBar } from './components/MobileCartBar.tsx';
+import { KitchenKds } from './components/KitchenKds.tsx';
+import { BarKds } from './components/BarKds.tsx';
+import { PosNotificationCenter } from './components/PosNotificationCenter.tsx';
 import { playAddToCartSound, playTapSound, playCheckoutPromptSound } from './utils/audio.ts';
 import { WifiOff, AlertTriangle, ChevronRight } from 'lucide-react';
 
+function getInitialStation(): 'pos' | 'kitchen' | 'bar' {
+  if (typeof window === 'undefined') return 'pos';
+  const path = window.location.pathname.toLowerCase();
+  const search = new URLSearchParams(window.location.search);
+  const stationParam = search.get('station') || search.get('kds') || search.get('view');
+
+  if (path.includes('/kitchen') || stationParam === 'kitchen') {
+    return 'kitchen';
+  }
+  if (path.includes('/bar') || stationParam === 'bar') {
+    return 'bar';
+  }
+  return 'pos';
+}
+
 export default function App() {
+  // Station Routing State (/pos, /kitchen, /bar)
+  const [activeStation, setActiveStation] = useState<'pos' | 'kitchen' | 'bar'>(getInitialStation);
+
+  const navigateStation = (station: 'pos' | 'kitchen' | 'bar') => {
+    playTapSound();
+    setActiveStation(station);
+    const targetPath = station === 'pos' ? '/' : `/${station}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ station }, '', targetPath);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveStation(getInitialStation());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Navigation & Flow State
   const [orderStep, setOrderStep] = useState<'attract' | 'menu' | 'terminal_payment' | 'payment_success'>('attract');
   const [orderType, setOrderType] = useState<OrderType>('dine_in');

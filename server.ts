@@ -24,23 +24,27 @@ let configState = {
   simulationMode: process.env.SUMUP_SIMULATION_MODE !== 'false' || !process.env.SUMUP_API_KEY,
 };
 
-// Initial Inventory Stock levels for Amica Roastery & Bar
+// Initial Inventory Stock levels for Amica Soho
 const inventoryState: Record<string, { stock: number; isAvailable: boolean }> = {
-  prod_flat_white: { stock: 45, isAvailable: true },
-  prod_espresso_doppio: { stock: 50, isAvailable: true },
-  prod_cold_brew: { stock: 30, isAvailable: true },
-  prod_cortado: { stock: 35, isAvailable: true },
-  prod_croissant_pastries: { stock: 20, isAvailable: true },
-  prod_espresso_martini: { stock: 30, isAvailable: true },
   prod_negroni: { stock: 35, isAvailable: true },
   prod_aperol_spritz: { stock: 45, isAvailable: true },
+  prod_americano: { stock: 25, isAvailable: true },
+  prod_espresso_martini: { stock: 30, isAvailable: true },
+  prod_bellini: { stock: 20, isAvailable: true },
   prod_burrata: { stock: 18, isAvailable: true },
+  prod_arancini: { stock: 22, isAvailable: true },
   prod_truffle_arancini: { stock: 16, isAvailable: true },
   prod_focaccia: { stock: 24, isAvailable: true },
+  prod_olives: { stock: 30, isAvailable: true },
   prod_cacio_pepe: { stock: 20, isAvailable: true },
+  prod_rigatoni_vodka: { stock: 18, isAvailable: true },
   prod_margherita: { stock: 25, isAvailable: true },
   prod_tiramisu: { stock: 14, isAvailable: true },
   prod_affogato: { stock: 20, isAvailable: true },
+  prod_prosecco: { stock: 30, isAvailable: true },
+  prod_chianti: { stock: 25, isAvailable: true },
+  prod_peroni: { stock: 40, isAvailable: true },
+  prod_san_pellegrino: { stock: 50, isAvailable: true },
 };
 
 // Fallback / Simulation Readers
@@ -89,6 +93,206 @@ interface StoredCheckout {
 }
 
 const checkoutsStore = new Map<string, StoredCheckout>();
+
+// --- Kitchen & Bar KDS State ---
+export type KdsStation = 'kitchen' | 'bar';
+export type KdsTicketStatus = 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+
+export interface ServerKdsItem {
+  id: string;
+  productId: string;
+  name: string;
+  quantity: number;
+  category: string;
+  station: KdsStation;
+  selectedOptions?: Record<string, string>;
+  notes?: string;
+  isCompleted?: boolean;
+}
+
+export interface ServerKdsTicket {
+  id: string;
+  orderNumber: string;
+  table: string;
+  orderType: 'dine_in' | 'takeaway';
+  createdAt: number;
+  items: ServerKdsItem[];
+  kitchenStatus: KdsTicketStatus;
+  barStatus: KdsTicketStatus;
+  kitchenReadyAt?: number;
+  barReadyAt?: number;
+  notes?: string;
+  total?: number;
+  paid?: boolean;
+}
+
+export interface ServerPosNotification {
+  id: string;
+  ticketId: string;
+  orderNumber: string;
+  table: string;
+  station: KdsStation;
+  itemsSummary: string;
+  readyAt: number;
+  dismissed: boolean;
+}
+
+const kdsTicketsStore = new Map<string, ServerKdsTicket>();
+const posNotificationsStore = new Map<string, ServerPosNotification>();
+
+function determineStation(category = '', name = '', id = ''): KdsStation {
+  const cat = category.toLowerCase();
+  const n = name.toLowerCase();
+  const i = id.toLowerCase();
+
+  const barCategories = ['cocktails', 'aperitivo', 'wine', 'beer', 'soft drinks'];
+  if (barCategories.some((bc) => cat.includes(bc))) {
+    return 'bar';
+  }
+
+  const kitchenCategories = ['small plates', 'pasta', 'pizza', 'desserts', 'food'];
+  if (kitchenCategories.some((kc) => cat.includes(kc))) {
+    return 'kitchen';
+  }
+
+  const barKeywords = ['negroni', 'spritz', 'americano', 'martini', 'bellini', 'prosecco', 'chianti', 'peroni', 'pellegrino', 'tonic', 'beer', 'wine', 'cocktail', 'drink'];
+  if (barKeywords.some((k) => n.includes(k) || i.includes(k))) {
+    return 'bar';
+  }
+
+  return 'kitchen';
+}
+
+// Seed initial realistic tickets so Kitchen & Bar KDS screens are live on first launch
+const now = Date.now();
+const initialTickets: ServerKdsTicket[] = [
+  {
+    id: 'ticket_seed_101',
+    orderNumber: 'A-412',
+    table: 'Table 12',
+    orderType: 'dine_in',
+    createdAt: now - 3.5 * 60 * 1000, // 3.5 mins ago
+    kitchenStatus: 'preparing',
+    barStatus: 'preparing',
+    notes: 'Table 12 VIP · Guest has light nut allergy',
+    total: 48.00,
+    paid: true,
+    items: [
+      {
+        id: 'item_101_1',
+        productId: 'prod_negroni',
+        name: 'Negroni',
+        quantity: 1,
+        category: 'Cocktails',
+        station: 'bar',
+        selectedOptions: { 'Gin Selection': 'Tanqueray London Dry', 'Preparation Style': 'Classic on Crystal Rock' },
+        isCompleted: false,
+      },
+      {
+        id: 'item_101_2',
+        productId: 'prod_aperol_spritz',
+        name: 'Aperol Spritz',
+        quantity: 1,
+        category: 'Cocktails',
+        station: 'bar',
+        selectedOptions: { 'Soda Preference': 'Extra soda' },
+        isCompleted: true,
+      },
+      {
+        id: 'item_101_3',
+        productId: 'prod_burrata',
+        name: 'Burrata Pugliese',
+        quantity: 1,
+        category: 'Small Plates',
+        station: 'kitchen',
+        selectedOptions: { 'Accompaniment': 'Add focaccia' },
+        isCompleted: true,
+      },
+      {
+        id: 'item_101_4',
+        productId: 'prod_truffle_arancini',
+        name: 'Truffle & Porcini Arancini',
+        quantity: 2,
+        category: 'Small Plates',
+        station: 'kitchen',
+        isCompleted: false,
+      },
+    ],
+  },
+  {
+    id: 'ticket_seed_102',
+    orderNumber: 'A-389',
+    table: 'Bar 02',
+    orderType: 'takeaway',
+    createdAt: now - 7 * 60 * 1000, // 7 mins ago
+    kitchenStatus: 'completed',
+    barStatus: 'ready',
+    barReadyAt: now - 45 * 1000,
+    total: 24.00,
+    paid: true,
+    items: [
+      {
+        id: 'item_102_1',
+        productId: 'prod_espresso_martini',
+        name: 'Espresso Martini',
+        quantity: 2,
+        category: 'Cocktails',
+        station: 'bar',
+        selectedOptions: { 'Coffee Roaster': 'Monmouth Espresso' },
+        isCompleted: true,
+      },
+    ],
+  },
+  {
+    id: 'ticket_seed_103',
+    orderNumber: 'A-275',
+    table: 'Table 04',
+    orderType: 'dine_in',
+    createdAt: now - 13 * 60 * 1000, // 13 mins ago (Priority / Amber)
+    kitchenStatus: 'preparing',
+    barStatus: 'completed',
+    notes: 'Extra hot parmesan requested',
+    total: 39.00,
+    paid: true,
+    items: [
+      {
+        id: 'item_103_1',
+        productId: 'prod_cacio_pepe',
+        name: 'Tonnarelli Cacio e Pepe',
+        quantity: 1,
+        category: 'Pasta',
+        station: 'kitchen',
+        selectedOptions: { 'Luxury Additions': 'Extra black truffle' },
+        isCompleted: false,
+      },
+      {
+        id: 'item_103_2',
+        productId: 'prod_margherita',
+        name: 'Margherita Verace Pizza',
+        quantity: 1,
+        category: 'Pizza',
+        station: 'kitchen',
+        isCompleted: false,
+      },
+    ],
+  },
+];
+
+for (const t of initialTickets) {
+  kdsTicketsStore.set(t.id, t);
+}
+
+// Initial ready notification for Bar 02 Espresso Martinis
+posNotificationsStore.set('notif_seed_bar02', {
+  id: 'notif_seed_bar02',
+  ticketId: 'ticket_seed_102',
+  orderNumber: 'A-389',
+  table: 'Bar 02',
+  station: 'bar',
+  itemsSummary: '2x Espresso Martini',
+  readyAt: now - 45 * 1000,
+  dismissed: false,
+});
 
 // Helper to deduct inventory when a transaction succeeds
 function deductInventoryForCheckout(checkout: StoredCheckout) {
@@ -770,6 +974,238 @@ async function startServer() {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // --- KDS (Kitchen & Bar Display Systems) Endpoints ---
+
+  // 1. Get KDS tickets: GET /api/kds/orders
+  app.get('/api/kds/orders', (req: Request, res: Response) => {
+    const station = req.query.station as string | undefined; // 'kitchen' | 'bar'
+    const statusFilter = (req.query.status as string) || 'active'; // 'active' | 'completed' | 'all'
+
+    const allTickets = Array.from(kdsTicketsStore.values()).sort(
+      (a, b) => b.createdAt - a.createdAt
+    );
+
+    let filtered = allTickets;
+
+    if (station === 'kitchen') {
+      filtered = filtered.filter((t) => t.items.some((i) => i.station === 'kitchen'));
+      if (statusFilter === 'active') {
+        filtered = filtered.filter((t) => t.kitchenStatus !== 'completed' && t.kitchenStatus !== 'cancelled');
+      } else if (statusFilter === 'completed') {
+        filtered = filtered.filter((t) => t.kitchenStatus === 'completed');
+      }
+    } else if (station === 'bar') {
+      filtered = filtered.filter((t) => t.items.some((i) => i.station === 'bar'));
+      if (statusFilter === 'active') {
+        filtered = filtered.filter((t) => t.barStatus !== 'completed' && t.barStatus !== 'cancelled');
+      } else if (statusFilter === 'completed') {
+        filtered = filtered.filter((t) => t.barStatus === 'completed');
+      }
+    } else if (statusFilter === 'active') {
+      filtered = filtered.filter(
+        (t) => (t.kitchenStatus !== 'completed' && t.kitchenStatus !== 'cancelled') ||
+               (t.barStatus !== 'completed' && t.barStatus !== 'cancelled')
+      );
+    }
+
+    res.json({
+      success: true,
+      station: station || 'all',
+      count: filtered.length,
+      tickets: filtered,
+    });
+  });
+
+  // 2. Create new KDS ticket: POST /api/kds/orders
+  app.post('/api/kds/orders', (req: Request, res: Response) => {
+    const {
+      orderNumber = `A-${Math.floor(100 + Math.random() * 900)}`,
+      table = 'Table 12',
+      orderType = 'dine_in',
+      items = [],
+      notes = '',
+      total = 0,
+      paid = false,
+    } = req.body;
+
+    const ticketId = `ticket_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+    // Normalize and tag items with station
+    const kdsItems: ServerKdsItem[] = items.map((raw: any, idx: number) => {
+      const station = raw.station || determineStation(raw.category, raw.name, raw.productId || raw.id);
+      return {
+        id: raw.id || `${ticketId}_${idx}`,
+        productId: raw.productId || raw.id || `prod_${idx}`,
+        name: raw.name || 'Item',
+        quantity: raw.quantity || 1,
+        category: raw.category || (station === 'bar' ? 'Cocktails' : 'Small Plates'),
+        station,
+        selectedOptions: raw.selectedOptions,
+        notes: raw.notes,
+        isCompleted: false,
+      };
+    });
+
+    const hasBarItems = kdsItems.some((i) => i.station === 'bar');
+    const hasKitchenItems = kdsItems.some((i) => i.station === 'kitchen');
+
+    const newTicket: ServerKdsTicket = {
+      id: ticketId,
+      orderNumber,
+      table,
+      orderType,
+      createdAt: Date.now(),
+      items: kdsItems,
+      barStatus: hasBarItems ? 'pending' : 'completed',
+      kitchenStatus: hasKitchenItems ? 'pending' : 'completed',
+      notes,
+      total,
+      paid,
+    };
+
+    kdsTicketsStore.set(ticketId, newTicket);
+
+    res.json({
+      success: true,
+      ticket: newTicket,
+    });
+  });
+
+  // 3. Update KDS ticket status: PATCH /api/kds/orders/:id
+  app.patch('/api/kds/orders/:id', (req: Request, res: Response) => {
+    const ticketId = req.params.id;
+    const ticket = kdsTicketsStore.get(ticketId);
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'KDS ticket not found' });
+    }
+
+    const {
+      kitchenStatus,
+      barStatus,
+      itemId,
+      itemCompleted,
+      notes,
+    } = req.body;
+
+    // Toggle individual item completion if requested
+    if (itemId) {
+      const item = ticket.items.find((i) => i.id === itemId);
+      if (item) {
+        item.isCompleted = typeof itemCompleted === 'boolean' ? itemCompleted : !item.isCompleted;
+      }
+    }
+
+    if (notes !== undefined) {
+      ticket.notes = notes;
+    }
+
+    // Update Kitchen Status & notify POS if marked ready
+    if (kitchenStatus && kitchenStatus !== ticket.kitchenStatus) {
+      const prevStatus = ticket.kitchenStatus;
+      ticket.kitchenStatus = kitchenStatus;
+
+      if (kitchenStatus === 'ready' && prevStatus !== 'ready') {
+        ticket.kitchenReadyAt = Date.now();
+        const foodItems = ticket.items.filter((i) => i.station === 'kitchen');
+        const summary = foodItems.map((i) => `${i.quantity}x ${i.name}`).join(', ');
+
+        const notifId = `notif_kit_${ticket.id}_${Date.now()}`;
+        posNotificationsStore.set(notifId, {
+          id: notifId,
+          ticketId: ticket.id,
+          orderNumber: ticket.orderNumber,
+          table: ticket.table,
+          station: 'kitchen',
+          itemsSummary: summary || 'Kitchen Order',
+          readyAt: Date.now(),
+          dismissed: false,
+        });
+      }
+    }
+
+    // Update Bar Status & notify POS if marked ready
+    if (barStatus && barStatus !== ticket.barStatus) {
+      const prevStatus = ticket.barStatus;
+      ticket.barStatus = barStatus;
+
+      if (barStatus === 'ready' && prevStatus !== 'ready') {
+        ticket.barReadyAt = Date.now();
+        const drinkItems = ticket.items.filter((i) => i.station === 'bar');
+        const summary = drinkItems.map((i) => `${i.quantity}x ${i.name}`).join(', ');
+
+        const notifId = `notif_bar_${ticket.id}_${Date.now()}`;
+        posNotificationsStore.set(notifId, {
+          id: notifId,
+          ticketId: ticket.id,
+          orderNumber: ticket.orderNumber,
+          table: ticket.table,
+          station: 'bar',
+          itemsSummary: summary || 'Bar Order',
+          readyAt: Date.now(),
+          dismissed: false,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      ticket,
+    });
+  });
+
+  // 4. Recall a completed ticket: POST /api/kds/orders/:id/recall
+  app.post('/api/kds/orders/:id/recall', (req: Request, res: Response) => {
+    const ticketId = req.params.id;
+    const { station } = req.body; // 'kitchen' | 'bar'
+    const ticket = kdsTicketsStore.get(ticketId);
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (station === 'kitchen') {
+      ticket.kitchenStatus = 'ready';
+    } else if (station === 'bar') {
+      ticket.barStatus = 'ready';
+    }
+
+    res.json({ success: true, ticket });
+  });
+
+  // 5. Get active POS Notifications: GET /api/kds/notifications
+  app.get('/api/kds/notifications', (_req: Request, res: Response) => {
+    const active = Array.from(posNotificationsStore.values())
+      .filter((n) => !n.dismissed)
+      .sort((a, b) => b.readyAt - a.readyAt);
+
+    res.json({
+      success: true,
+      notifications: active,
+    });
+  });
+
+  // 6. Dismiss / Collect POS Notification: POST /api/kds/notifications/:id/dismiss
+  app.post('/api/kds/notifications/:id/dismiss', (req: Request, res: Response) => {
+    const notifId = req.params.id;
+    const notif = posNotificationsStore.get(notifId);
+
+    if (notif) {
+      notif.dismissed = true;
+    }
+
+    res.json({ success: true, notifId });
+  });
+
+  // 7. Clear all POS Notifications: POST /api/kds/notifications/clear-all
+  app.post('/api/kds/notifications/clear-all', (_req: Request, res: Response) => {
+    for (const notif of posNotificationsStore.values()) {
+      notif.dismissed = true;
+    }
+    res.json({ success: true });
+  });
+
 
   // --- Vite / Static Handling ---
   if (process.env.NODE_ENV === 'production') {

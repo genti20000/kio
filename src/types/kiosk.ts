@@ -60,7 +60,6 @@ export interface CheckoutResponse {
   cardType?: string;
   failureReason?: string;
   terminalStep?: 'connecting' | 'awaiting_card' | 'processing' | 'approved' | 'declined';
-  orderNumber?: string;
 }
 
 export interface KioskOrder {
@@ -75,6 +74,50 @@ export interface KioskOrder {
   checkoutId: string;
   readerName: string;
   receiptEmail?: string;
+  table?: string;
+  notes?: string;
+}
+
+export type KdsStation = 'kitchen' | 'bar';
+export type KdsTicketStatus = 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+
+export interface KdsItem {
+  id: string;
+  productId: string;
+  name: string;
+  quantity: number;
+  category: string;
+  station: KdsStation;
+  selectedOptions?: Record<string, string>;
+  notes?: string;
+  isCompleted?: boolean;
+}
+
+export interface KdsTicket {
+  id: string;
+  orderNumber: string;
+  table: string;
+  orderType: OrderType;
+  createdAt: number;
+  items: KdsItem[];
+  kitchenStatus: KdsTicketStatus;
+  barStatus: KdsTicketStatus;
+  kitchenReadyAt?: number;
+  barReadyAt?: number;
+  notes?: string;
+  total?: number;
+  paid?: boolean;
+}
+
+export interface PosNotification {
+  id: string;
+  ticketId: string;
+  orderNumber: string;
+  table: string;
+  station: KdsStation;
+  itemsSummary: string;
+  readyAt: number;
+  dismissed: boolean;
 }
 
 export interface KioskConfig {
