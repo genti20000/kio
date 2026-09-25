@@ -130,17 +130,22 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-      <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
+      <div className="bg-stone-900 border-t sm:border border-stone-800 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+        {/* Mobile handle indicator */}
+        <div className="sm:hidden py-2 flex justify-center cursor-pointer" onClick={onClose}>
+          <div className="w-12 h-1 rounded-full bg-stone-700" />
+        </div>
+
         {/* Header */}
-        <div className="p-6 border-b border-stone-800 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-stone-800 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Kiosk Manager & Terminal Hub</h2>
-              <p className="text-xs text-stone-400">Configure SumUp Cloud Reader & Real-Time Stock</p>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">Kiosk Manager & Terminal Hub</h2>
+              <p className="text-[11px] sm:text-xs text-stone-400">Configure SumUp Cloud Reader & Real-Time Stock</p>
             </div>
           </div>
 
@@ -157,7 +162,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({
         </div>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-stone-800 px-6 bg-stone-950/60">
+        <div className="flex border-b border-stone-800 px-3 sm:px-6 bg-stone-950/60 overflow-x-auto flex-shrink-0">
           <button
             onClick={() => {
               playTapSound();

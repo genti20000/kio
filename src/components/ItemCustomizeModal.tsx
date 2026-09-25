@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus } from 'lucide-react';
+import { X, Plus, Minus, Check } from 'lucide-react';
 import { Product, CartItem } from '../types/kiosk.ts';
 import { playTapSound, playAddToCartSound } from '../utils/audio.ts';
 
@@ -16,7 +16,7 @@ export const ItemCustomizeModal: React.FC<ItemCustomizeModalProps> = ({
   onClose,
   onAddToCart,
 }) => {
-  const formattedCurrency = currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : '$';
+  const formattedCurrency = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '£';
 
   // Initialize selected options with defaults
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
@@ -72,106 +72,130 @@ export const ItemCustomizeModal: React.FC<ItemCustomizeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none">
-      <div className="relative w-full max-w-lg bg-[#0a0a0a] border border-[#c89b3c]/40 rounded-[4px] p-8 md:p-10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-        {/* Close Button */}
-        <button
-          onClick={() => {
-            playTapSound();
-            onClose();
-          }}
-          className="absolute top-6 right-6 w-9 h-9 rounded-full border border-[#c89b3c]/20 text-[#e0d9cc]/40 hover:text-[#c89b3c] hover:border-[#c89b3c] flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm select-none animate-fade-in">
+      {/* Backdrop click */}
+      <div className="absolute inset-0" onClick={onClose} />
 
-        {/* Header */}
-        <div className="mb-6 pb-4 border-b border-[#c89b3c]/20">
-          <span className="meta-label">Bespoke Preparation</span>
-          <h2 className="font-cinzel text-3xl font-bold text-[#e0d9cc] mt-1 tracking-wide">
-            {product.name}
-          </h2>
-          <p className="font-sans-editorial text-sm font-light text-[#e0d9cc]/60 mt-1 leading-relaxed">
-            {product.description}
-          </p>
+      <div className="relative w-full sm:max-w-xl max-h-[92vh] sm:max-h-[90vh] bg-[#14110E] border-t sm:border border-[#2D261F] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl z-10 animate-slide-up">
+        {/* Mobile handle indicator */}
+        <div className="sm:hidden py-2 flex justify-center cursor-pointer" onClick={onClose}>
+          <div className="w-12 h-1 rounded-full bg-stone-700" />
         </div>
 
-        {/* Options List */}
-        <div className="flex-grow overflow-y-auto no-scrollbar space-y-6 pr-1 mb-6">
+        {/* Modal Header */}
+        <div className="px-4 py-3.5 sm:p-5 border-b border-[#241F1A] flex items-center justify-between flex-shrink-0 bg-[#0E0C0A]">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#181512] border border-[#2D261F] flex-shrink-0">
+              <img
+                src={product.image}
+                alt={product.name}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-serif-luxury font-bold text-[#F3E7C4] tracking-tight">
+                {product.name}
+              </h2>
+              <div className="text-[11px] text-[#C89B3C] font-light mt-0.5">
+                {product.category} · {formattedCurrency}{unitPrice.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              playTapSound();
+              onClose();
+            }}
+            className="w-10 h-10 rounded-xl bg-[#1A1613] text-stone-300 hover:text-white flex items-center justify-center min-h-[44px] min-w-[44px] border border-[#2B231B] active:scale-95"
+            aria-label="Close modal"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Modal Body: Customization Groups */}
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-grow overscroll-contain">
+          <p className="text-xs text-stone-400 font-light leading-relaxed">
+            {product.description}
+          </p>
+
           {product.customizationGroups?.map((group) => (
-            <div key={group.id} className="space-y-3">
-              <span className="meta-label text-xs tracking-wider text-[#c89b3c]">
+            <div key={group.id} className="space-y-2">
+              <label className="text-xs font-semibold text-[#E5C378] tracking-wider uppercase block">
                 {group.name}
-              </span>
-              <div className="grid grid-cols-1 gap-2">
-                {group.options.map((option) => {
-                  const isSelected = selectedOptions[group.name] === option.name;
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {group.options.map((opt) => {
+                  const isSelected = selectedOptions[group.name] === opt.name;
                   return (
                     <button
-                      key={option.name}
-                      onClick={() => handleSelectOption(group.name, option.name)}
-                      className={`p-3.5 border rounded-[2px] flex items-center justify-between text-left transition-all ${
+                      key={opt.name}
+                      onClick={() => handleSelectOption(group.name, opt.name)}
+                      className={`min-h-[46px] p-3 rounded-xl border text-left flex items-center justify-between transition-all active:scale-[0.98] ${
                         isSelected
-                          ? 'border-[#c89b3c] bg-[#c89b3c]/10 text-[#e0d9cc] shadow-[0_0_12px_rgba(200,155,60,0.2)]'
-                          : 'border-white/10 bg-[#111111] text-[#e0d9cc]/60 hover:border-[#c89b3c]/40'
+                          ? 'border-[#C89B3C] bg-[#5C1D24]/40 text-[#F3E7C4] shadow-sm font-semibold'
+                          : 'border-[#262019] bg-[#100E0C] text-stone-300 hover:border-[#382E23]'
                       }`}
                     >
-                      <span className="font-cinzel text-sm">{option.name}</span>
-                      <span className="font-mono-meta text-xs text-[#c89b3c]">
-                        {option.priceDelta > 0
-                          ? `+${formattedCurrency}${option.priceDelta.toFixed(2)}`
-                          : 'Included'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#E5C378]" />}
+                        <span className="text-xs">{opt.name}</span>
+                      </div>
+                      {opt.priceDelta > 0 && (
+                        <span className="text-xs font-semibold text-[#E5C378] tabular-nums">
+                          +{formattedCurrency}{opt.priceDelta.toFixed(2)}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
           ))}
-
-          {/* Quantity Selector */}
-          <div className="pt-2 flex items-center justify-between border-t border-white/5">
-            <span className="meta-label">Quantity</span>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  playTapSound();
-                  setQuantity((q) => Math.max(1, q - 1));
-                }}
-                className="w-8 h-8 rounded-full border border-[#c89b3c]/30 text-[#e0d9cc] flex items-center justify-center hover:border-[#c89b3c]"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <span className="font-mono-meta text-base text-[#c89b3c] w-6 text-center font-bold">
-                {quantity}
-              </span>
-              <button
-                onClick={() => {
-                  playTapSound();
-                  setQuantity((q) => q + 1);
-                }}
-                className="w-8 h-8 rounded-full border border-[#c89b3c]/30 text-[#e0d9cc] flex items-center justify-center hover:border-[#c89b3c]"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Footer CTA */}
-        <div className="pt-4 border-t border-[#c89b3c]/20 flex items-center justify-between gap-4">
-          <div>
-            <span className="meta-label text-[10px]">Total</span>
-            <div className="font-cinzel text-2xl font-bold text-[#c89b3c]">
-              {formattedCurrency}{totalPrice.toFixed(2)}
-            </div>
+        {/* Modal Footer: Sticky Quantity + Add to Order */}
+        <div className="p-3.5 sm:p-5 border-t border-[#241F1A] bg-[#0E0C0A] flex items-center justify-between gap-3 flex-shrink-0 pb-[calc(0.9rem+env(safe-area-inset-bottom,0px))]">
+          {/* Quantity Stepper with 44px touch targets */}
+          <div className="flex items-center gap-2 bg-[#161310] border border-[#2D261F] rounded-2xl p-1">
+            <button
+              onClick={() => {
+                playTapSound();
+                setQuantity((prev) => Math.max(1, prev - 1));
+              }}
+              disabled={quantity <= 1}
+              className="w-10 h-10 rounded-xl bg-[#1E1914] text-stone-300 disabled:opacity-30 disabled:pointer-events-none hover:text-white flex items-center justify-center min-h-[44px] min-w-[44px] active:scale-90"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-bold text-[#F3E7C4] w-8 text-center tabular-nums">
+              {quantity}
+            </span>
+            <button
+              onClick={() => {
+                playTapSound();
+                setQuantity((prev) => prev + 1);
+              }}
+              className="w-10 h-10 rounded-xl bg-[#1E1914] text-stone-300 hover:text-white flex items-center justify-center min-h-[44px] min-w-[44px] active:scale-90"
+              aria-label="Increase quantity"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
 
+          {/* Confirm Button */}
           <button
             onClick={handleAdd}
-            className="flex-grow py-4 px-6 bg-[#c89b3c] hover:bg-[#d6ab4e] active:scale-[0.98] text-[#000000] font-cinzel text-base font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(200,155,60,0.3)] cursor-pointer rounded-[2px]"
+            className="flex-grow py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#E5C378] to-[#C89B3C] text-[#0C0B0A] font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#C89B3C]/20 flex items-center justify-center gap-2 min-h-[46px]"
           >
-            Reserve Selection
+            <span>Add to Table Order</span>
+            <span>·</span>
+            <span className="tabular-nums font-bold">
+              {formattedCurrency}{totalPrice.toFixed(2)}
+            </span>
           </button>
         </div>
       </div>

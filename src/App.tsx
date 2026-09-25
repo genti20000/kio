@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { INITIAL_PRODUCTS, CATEGORIES } from './data/initialCatalog.ts';
 import { Product, CartItem, OrderType, SumUpReader, CheckoutResponse, KioskOrder, KioskConfig } from './types/kiosk.ts';
 import { AttractScreen } from './components/AttractScreen.tsx';
+import { TopBar } from './components/TopBar.tsx';
 import { LeftSidebar } from './components/LeftSidebar.tsx';
 import { ProductCard } from './components/ProductCard.tsx';
 import { ItemCustomizeModal } from './components/ItemCustomizeModal.tsx';
@@ -16,18 +17,10 @@ import { PaymentSuccessModal } from './components/PaymentSuccessModal.tsx';
 import { InactivityWarningModal } from './components/InactivityWarningModal.tsx';
 import { AdminSettingsModal } from './components/AdminSettingsModal.tsx';
 import { CheckoutDiagnosticModal, CheckoutErrorInfo } from './components/CheckoutDiagnosticModal.tsx';
+import { MobileCategoryBar } from './components/MobileCategoryBar.tsx';
+import { MobileCartBar } from './components/MobileCartBar.tsx';
 import { playAddToCartSound, playTapSound, playCheckoutPromptSound } from './utils/audio.ts';
-import {
-  Coffee,
-  ShoppingBag,
-  Search,
-  ChevronDown,
-  WifiOff,
-  AlertTriangle,
-  SlidersHorizontal,
-  CreditCard,
-  X,
-} from 'lucide-react';
+import { WifiOff, AlertTriangle, ChevronRight } from 'lucide-react';
 
 export default function App() {
   // Navigation & Flow State
@@ -36,16 +29,15 @@ export default function App() {
   const [activeTable, setActiveTable] = useState<string>('Table 12');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Items');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showTableSelect, setShowTableSelect] = useState<boolean>(false);
-  const [showMobileSearch, setShowMobileSearch] = useState<boolean>(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState<boolean>(false);
 
   // Product Catalog & Inventory
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const cached = localStorage.getItem('amica_kiosk_products_v4');
+      const cached = localStorage.getItem('amica_kiosk_products_v3');
       if (cached) {
         const parsed: Product[] = JSON.parse(cached);
+        // Merge to guarantee fresh images for all items
         return INITIAL_PRODUCTS.map((init) => {
           const match = parsed.find((p) => p.id === init.id);
           return match ? { ...init, stock: match.stock, isAvailable: match.isAvailable } : init;
@@ -57,41 +49,81 @@ export default function App() {
     }
   });
 
-  // Shopping Cart pre-populated with coffee atelier sample if empty
+  // Shopping Cart pre-populated with items matching the Amica Soho showcase if empty
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const cached = localStorage.getItem('amica_kiosk_cart_v4');
+      const cached = localStorage.getItem('amica_kiosk_cart_v3');
       if (cached) return JSON.parse(cached);
     } catch {
       // ignore
     }
-    const flatWhite = INITIAL_PRODUCTS.find((p) => p.id === 'prod_flat_white');
-    const croissant = INITIAL_PRODUCTS.find((p) => p.id === 'prod_croissant_pastries');
-    const sample: CartItem[] = [];
-    if (flatWhite) {
-      sample.push({
-        cartId: 'cart_fw_1',
-        productId: flatWhite.id,
-        name: 'Silky Flat White',
-        price: 4.80,
+    // Initial sample matching the user's tablet photo with individual photos
+    const negroni = INITIAL_PRODUCTS.find((p) => p.id === 'prod_negroni');
+    const aperol = INITIAL_PRODUCTS.find((p) => p.id === 'prod_aperol_spritz');
+    const burrata = INITIAL_PRODUCTS.find((p) => p.id === 'prod_burrata');
+    const truffleArancini = INITIAL_PRODUCTS.find((p) => p.id === 'prod_truffle_arancini');
+    const cacioPepe = INITIAL_PRODUCTS.find((p) => p.id === 'prod_cacio_pepe');
+
+    const sampleItems: CartItem[] = [];
+    if (negroni) {
+      sampleItems.push({
+        cartId: 'cart_negroni_1',
+        productId: negroni.id,
+        name: negroni.name,
+        price: negroni.price,
         quantity: 1,
-        image: flatWhite.image,
-        selectedOptions: { 'Milk Preference': 'Oat Milk (Barista Edition)' },
-        unitTotal: 5.30,
+        image: negroni.image,
+        unitTotal: 12.00,
       });
     }
-    if (croissant) {
-      sample.push({
-        cartId: 'cart_croissant_2',
-        productId: croissant.id,
-        name: 'Warm Butter Pastries',
-        price: 5.50,
+    if (aperol) {
+      sampleItems.push({
+        cartId: 'cart_aperol_2',
+        productId: aperol.id,
+        name: aperol.name,
+        price: aperol.price,
         quantity: 1,
-        image: croissant.image,
-        unitTotal: 5.50,
+        image: aperol.image,
+        selectedOptions: { 'Soda Preference': 'Extra soda' },
+        unitTotal: 11.00,
       });
     }
-    return sample;
+    if (burrata) {
+      sampleItems.push({
+        cartId: 'cart_burrata_3',
+        productId: burrata.id,
+        name: burrata.name,
+        price: burrata.price,
+        quantity: 1,
+        image: burrata.image,
+        selectedOptions: { 'Accompaniment': 'Add focaccia' },
+        unitTotal: 14.00,
+      });
+    }
+    if (truffleArancini) {
+      sampleItems.push({
+        cartId: 'cart_arancini_4',
+        productId: truffleArancini.id,
+        name: truffleArancini.name,
+        price: truffleArancini.price,
+        quantity: 2,
+        image: truffleArancini.image,
+        unitTotal: 11.00,
+      });
+    }
+    if (cacioPepe) {
+      sampleItems.push({
+        cartId: 'cart_cacio_5',
+        productId: cacioPepe.id,
+        name: cacioPepe.name,
+        price: cacioPepe.price,
+        quantity: 1,
+        image: cacioPepe.image,
+        selectedOptions: { 'Luxury Additions': 'Extra black truffle' },
+        unitTotal: 16.00,
+      });
+    }
+    return sampleItems;
   });
 
   // Modal States
@@ -115,29 +147,30 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
-  // Inactivity Timer State (75s total, warning at 60s)
+  // Inactivity Timer State (60s total, warning at 45s)
   const [inactivitySeconds, setInactivitySeconds] = useState(0);
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Save cart & products to localStorage
+  // Save cart to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('amica_kiosk_cart_v4', JSON.stringify(cart));
+      localStorage.setItem('amica_kiosk_cart_v3', JSON.stringify(cart));
     } catch {
       // Ignore
     }
   }, [cart]);
 
+  // Save products to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('amica_kiosk_products_v4', JSON.stringify(products));
+      localStorage.setItem('amica_kiosk_products_v3', JSON.stringify(products));
     } catch {
       // Ignore
     }
   }, [products]);
 
-  // Reset inactivity timer
+  // Reset inactivity timer on any user touch/click/keypress
   const resetInactivity = useCallback(() => {
     setInactivitySeconds(0);
     setShowInactivityWarning(false);
@@ -157,6 +190,7 @@ export default function App() {
     };
   }, [resetInactivity]);
 
+  // Inactivity Interval Monitor
   useEffect(() => {
     if (orderStep !== 'menu') {
       setShowInactivityWarning(false);
@@ -166,12 +200,13 @@ export default function App() {
     inactivityTimerRef.current = setInterval(() => {
       setInactivitySeconds((prev) => {
         const next = prev + 1;
-        if (next >= 75) {
+        if (next >= 60) {
+          // Reset to attract screen
           setCart([]);
           setOrderStep('attract');
           setShowInactivityWarning(false);
           return 0;
-        } else if (next >= 60) {
+        } else if (next >= 45) {
           setShowInactivityWarning(true);
         }
         return next;
@@ -183,6 +218,7 @@ export default function App() {
     };
   }, [orderStep]);
 
+  // Online / Offline Listeners
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -196,6 +232,7 @@ export default function App() {
     };
   }, []);
 
+  // Sync Inventory from Backend API
   const fetchInventory = useCallback(async () => {
     try {
       const res = await fetch('/api/inventory');
@@ -222,6 +259,7 @@ export default function App() {
     }
   }, []);
 
+  // Fetch Config and Readers
   const fetchConfigAndReaders = useCallback(async () => {
     try {
       const [cfgRes, rdrRes] = await Promise.all([
@@ -248,7 +286,7 @@ export default function App() {
     fetchInventory();
   }, [fetchConfigAndReaders, fetchInventory]);
 
-  // Category counts
+  // Category counts computation
   const categoryCounts = React.useMemo(() => {
     const counts: Record<string, number> = { 'All Items': products.length };
     CATEGORIES.forEach((cat) => {
@@ -259,7 +297,7 @@ export default function App() {
     return counts;
   }, [products]);
 
-  // Filtered products
+  // Filtered products list
   const filteredProducts = React.useMemo(() => {
     let list = products;
     if (selectedCategory !== 'All Items') {
@@ -277,20 +315,33 @@ export default function App() {
     return list;
   }, [products, selectedCategory, searchQuery]);
 
+  // Sections groupings when "All Items" is active and no search query
+  const sections = React.useMemo(() => {
+    if (selectedCategory !== 'All Items' || searchQuery.trim().length > 0) {
+      return null;
+    }
+    return [
+      { name: 'COCKTAILS', category: 'Cocktails', items: products.filter((p) => p.category === 'Cocktails') },
+      { name: 'SMALL PLATES', category: 'Small Plates', items: products.filter((p) => p.category === 'Small Plates') },
+      { name: 'PASTA', category: 'Pasta', items: products.filter((p) => p.category === 'Pasta') },
+      { name: 'PIZZA', category: 'Pizza', items: products.filter((p) => p.category === 'Pizza') },
+      { name: 'DESSERTS', category: 'Desserts', items: products.filter((p) => p.category === 'Desserts') },
+    ];
+  }, [products, selectedCategory, searchQuery]);
+
+  // Active Reader
   const activeReader = React.useMemo(() => {
     return readers.find((r) => r.id === config.selectedReaderId) || readers[0] || null;
   }, [readers, config.selectedReaderId]);
 
-  const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.unitTotal * item.quantity, 0);
-  const cartTotal = cartSubtotal * 1.125;
-
+  // Start Order from Attract Screen
   const handleStartOrder = (type: OrderType) => {
     setOrderType(type);
     setOrderStep('menu');
     resetInactivity();
   };
 
+  // Add Item to Cart
   const handleAddToCart = (item: CartItem) => {
     resetInactivity();
     setCart((prev) => {
@@ -310,6 +361,7 @@ export default function App() {
     });
   };
 
+  // Select Product (opens customizer or directly adds)
   const handleSelectProduct = (product: Product) => {
     if (product.stock <= 0) return;
     if (product.customizationGroups && product.customizationGroups.length > 0) {
@@ -329,6 +381,7 @@ export default function App() {
     }
   };
 
+  // Cart quantity controls
   const handleUpdateQuantity = (cartId: string, delta: number) => {
     resetInactivity();
     setCart((prev) =>
@@ -354,14 +407,15 @@ export default function App() {
     setCart([]);
   };
 
+  // Checkout Execution: Calls backend Endpoint 2 (POST /api/checkout)
   const handlePayNow = async (forceSimulation = false) => {
     if (cart.length === 0) return;
     resetInactivity();
     playCheckoutPromptSound();
 
     const subtotal = cart.reduce((sum, item) => sum + item.unitTotal * item.quantity, 0);
-    const total = subtotal * 1.125;
-    const orderNumber = `${activeTable.replace(/\s+/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+    const total = subtotal * 1.125; // 12.5% London service charge
+    const orderNumber = `T12-${Math.floor(100 + Math.random() * 900)}`;
 
     try {
       const res = await fetch('/api/checkout', {
@@ -370,7 +424,7 @@ export default function App() {
         body: JSON.stringify({
           amount: parseFloat(total.toFixed(2)),
           currency: config.currency,
-          description: `AMICA Roastery & Bar ${activeTable}`,
+          description: `Amica Soho ${activeTable} Order #${orderNumber}`,
           readerId: config.selectedReaderId,
           items: cart.map((i) => ({ id: i.productId, quantity: i.quantity, name: i.name })),
           orderNumber,
@@ -385,14 +439,19 @@ export default function App() {
           title: errorData.title || 'Terminal Payment Notice',
           message: errorData.message || errorData.error || 'Failed to initiate SumUp checkout.',
           detail: errorData.detail,
-          suggestSimulation: true,
+          suggestSimulation: Boolean(
+            errorData.suggestSimulation ||
+            errorData.error === 'SUMUP_READER_NOT_FOUND' ||
+            errorData.error === 'NO_LIVE_READER' ||
+            errorData.error === 'INSUFFICIENT_SCOPES' ||
+            res.status === 404
+          ),
         });
         return;
       }
 
       const checkoutData: CheckoutResponse = await res.json();
       setActiveCheckout(checkoutData);
-      setIsMobileCartOpen(false);
       setOrderStep('terminal_payment');
     } catch (err: any) {
       console.error('Checkout error:', err);
@@ -415,6 +474,7 @@ export default function App() {
     }
   };
 
+  // Payment Success Handler
   const handlePaymentSuccess = (updatedCheckout: CheckoutResponse) => {
     const subtotal = cart.reduce((sum, item) => sum + item.unitTotal * item.quantity, 0);
     const tax = subtotal * 0.125;
@@ -423,8 +483,8 @@ export default function App() {
     const orderRecord: KioskOrder = {
       orderId: `ord_${Date.now()}`,
       orderNumber: updatedCheckout.id.includes('chk_')
-        ? `${activeTable.replace(/\s+/g, '')}-${Math.floor(100 + Math.random() * 900)}`
-        : 'T12-901',
+        ? `T12-${Math.floor(100 + Math.random() * 900)}`
+        : 'T12-408',
       orderType,
       items: [...cart],
       subtotal,
@@ -439,9 +499,12 @@ export default function App() {
     setCart([]);
     setActiveCheckout(null);
     setOrderStep('payment_success');
+
+    // Refresh inventory to reflect deductions
     fetchInventory();
   };
 
+  // Payment Failure Handler
   const handlePaymentFailure = (reason: string) => {
     setActiveCheckout(null);
     setOrderStep('menu');
@@ -449,11 +512,13 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 5000);
   };
 
+  // Payment Cancel Handler
   const handlePaymentCancel = () => {
     setActiveCheckout(null);
     setOrderStep('menu');
   };
 
+  // Finish Order (from Success Screen)
   const handleFinishOrder = () => {
     setCompletedOrder(null);
     setCart([]);
@@ -461,6 +526,7 @@ export default function App() {
     resetInactivity();
   };
 
+  // Toggle Fullscreen mode
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
@@ -471,6 +537,7 @@ export default function App() {
     }
   };
 
+  // Update Config
   const handleUpdateConfig = async (newConfig: Partial<KioskConfig> & { apiKey?: string }) => {
     try {
       const res = await fetch('/api/config', {
@@ -489,6 +556,7 @@ export default function App() {
     }
   };
 
+  // Adjust stock via Admin
   const handleAdjustStock = async (productId: string, delta: number) => {
     try {
       const res = await fetch('/api/inventory/adjust', {
@@ -504,6 +572,7 @@ export default function App() {
     }
   };
 
+  // Reset stock
   const handleResetStock = async () => {
     try {
       const res = await fetch('/api/inventory/reset', { method: 'POST' });
@@ -515,23 +584,20 @@ export default function App() {
     }
   };
 
-  const tableList = ['Table 12', 'Table 01', 'Booth 04', 'Counter 02', 'Lounge 08'];
-  const formattedCurrency = config.currency === 'GBP' ? '£' : config.currency === 'EUR' ? '€' : '$';
-
   return (
-    <div className="w-full h-screen bg-roastery-pattern text-[#f4ece1] flex flex-col overflow-hidden font-body select-none">
-      {/* Offline Alert */}
+    <div className="w-full h-screen bg-[#0C0B0A] text-stone-100 flex flex-col overflow-hidden font-sans select-none">
+      {/* Offline Banner if disconnected */}
       {!isOnline && (
-        <div className="bg-[#c88a58] text-[#120d09] px-4 py-2 font-mono-meta text-xs font-bold flex items-center justify-center gap-2 tracking-widest uppercase flex-shrink-0 z-50">
+        <div className="bg-[#C89B3C] text-stone-950 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
           <WifiOff className="w-4 h-4" />
-          <span>Offline Terminal Cache Active</span>
+          <span>Offline Mode Active · Table orders and inventory cached locally</span>
         </div>
       )}
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full bg-[#1c1410] border border-rose-500/50 text-rose-300 font-mono-meta text-xs uppercase tracking-wider flex items-center gap-2 shadow-2xl backdrop-blur-md">
-          <AlertTriangle className="w-4 h-4 text-rose-400" />
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-rose-950/90 border border-rose-700 text-white text-sm font-semibold flex items-center gap-2 shadow-2xl backdrop-blur-md animate-bounce">
+          <AlertTriangle className="w-4 h-4 text-rose-300" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -541,264 +607,145 @@ export default function App() {
         <AttractScreen onStartOrder={handleStartOrder} />
       )}
 
-      {/* Screen 2: Responsive Ordering Interface (Mobile & Tablet & Desktop Optimized) */}
+      {/* Screen 2: Main Tablet / Kiosk Ordering Interface (matching Amica Soho Mockup) */}
       {orderStep === 'menu' && (
-        <div className="flex h-full w-full overflow-hidden">
-          {/* Desktop Left Icon Nav */}
-          <LeftSidebar
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            categoryCounts={categoryCounts}
+        <div className="flex flex-col h-full overflow-hidden">
+          <TopBar
+            activeTable={activeTable}
+            onChangeTable={setActiveTable}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeReader={activeReader}
             onOpenSettings={() => setShowSettings(true)}
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
+            isOnline={isOnline}
+            cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+            onOpenCart={() => setIsMobileCartOpen(true)}
           />
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            {/* Top Navigation Bar (Mobile & Desktop Responsive) */}
-            <header className="px-4 sm:px-6 py-3.5 bg-[#14100e]/95 border-b border-[#c88a58]/20 flex items-center justify-between gap-3 z-30 flex-shrink-0 backdrop-blur-md">
-              {/* Brand Lockup */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#241a14] border border-[#c88a58]/40 flex items-center justify-center text-[#dda15e] font-bold text-sm shadow-md">
-                  ☕
-                </div>
-                <div>
-                  <h1 className="font-coffee text-base sm:text-lg font-bold text-[#f4ece1] leading-none tracking-wide">
-                    AMICA
-                  </h1>
-                  <span className="font-mono-meta text-[9px] text-[#dda15e] tracking-widest uppercase">
-                    Roastery & Bar
-                  </span>
-                </div>
-              </div>
+          {/* Mobile Horizontal Category Bar (on screens below lg) */}
+          <MobileCategoryBar
+            selectedCategory={selectedCategory}
+            onSelectCategory={(cat) => {
+              setSelectedCategory(cat);
+              if (searchQuery) setSearchQuery('');
+            }}
+            categoryCounts={categoryCounts}
+          />
 
-              {/* Table Selector & Search Controls */}
-              <div className="flex items-center gap-2">
-                {/* Table Picker */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowTableSelect(!showTableSelect)}
-                    className="h-9 px-3 rounded-full bg-[#1e1714] border border-[#c88a58]/30 font-mono-meta text-xs text-[#f4ece1] flex items-center gap-1.5 hover:border-[#dda15e] transition-colors"
-                  >
-                    <span>{activeTable}</span>
-                    <ChevronDown className="w-3 h-3 text-[#dda15e]" />
-                  </button>
+          <div className="flex-grow flex flex-row overflow-hidden relative">
+            {/* Left Category Sidebar (docked on lg+) */}
+            <LeftSidebar
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              categoryCounts={categoryCounts}
+            />
 
-                  {showTableSelect && (
-                    <div className="absolute right-0 mt-2 w-36 bg-[#1a1411] border border-[#c88a58]/50 rounded-2xl p-1.5 z-50 shadow-2xl">
-                      <div className="px-3 py-1 font-mono-meta text-[9px] text-[#dda15e] uppercase tracking-wider">
-                        Select Table
-                      </div>
-                      {tableList.map((t) => (
+            {/* Center Main Catalog Panel */}
+            <main
+              className={`flex-1 flex flex-col overflow-y-auto p-3 sm:p-4 md:p-6 bg-[#0E0C0A] overscroll-contain ${
+                cart.length > 0 ? 'pb-24 lg:pb-6' : 'pb-8 lg:pb-6'
+              }`}
+            >
+              {sections ? (
+                // Sections Grid Layout matching the tablet design
+                <div className="space-y-6 sm:space-y-8 max-w-5xl mx-auto w-full">
+                  {sections.map((section) => (
+                    <div key={section.name} className="space-y-2.5 sm:space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-brand text-xs font-bold tracking-widest text-[#E5C378] uppercase">
+                          {section.name}
+                        </h2>
                         <button
-                          key={t}
                           onClick={() => {
                             playTapSound();
-                            setActiveTable(t);
-                            setShowTableSelect(false);
+                            setSelectedCategory(section.category);
                           }}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono-meta transition-colors ${
-                            activeTable === t
-                              ? 'bg-[#c88a58] text-[#120d09] font-bold'
-                              : 'text-[#f4ece1]/70 hover:bg-[#261c16]'
-                          }`}
+                          className="text-[11px] text-stone-400 hover:text-[#E5C378] flex items-center gap-1 font-light min-h-[32px] p-1"
                         >
-                          {t}
+                          <span>See all</span>
+                          <ChevronRight className="w-3 h-3" />
                         </button>
-                      ))}
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3.5">
+                        {section.items.slice(0, 5).map((product) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            currency={config.currency}
+                            onSelect={handleSelectProduct}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Search Toggle / Input */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search menu..."
-                    className="hidden sm:block pl-8 pr-3 py-1.5 bg-[#1a1512] border border-[#c88a58]/25 rounded-full text-xs font-body text-[#f4ece1] placeholder-[#b8aaa0]/50 focus:outline-none focus:border-[#dda15e] w-40 md:w-52 transition-all"
-                  />
-                  <Search className="hidden sm:block w-3.5 h-3.5 text-[#dda15e] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-
-                  {/* Mobile Search Button */}
-                  <button
-                    onClick={() => setShowMobileSearch(!showMobileSearch)}
-                    className="sm:hidden w-9 h-9 rounded-full bg-[#1e1714] border border-[#c88a58]/30 flex items-center justify-center text-[#dda15e]"
-                    title="Search"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Mobile Cart Trigger Button */}
-                <button
-                  onClick={() => {
-                    playTapSound();
-                    setIsMobileCartOpen(true);
-                  }}
-                  className="lg:hidden relative h-9 px-3.5 rounded-full pill-caramel flex items-center gap-1.5 font-coffee text-xs font-bold uppercase tracking-wider shadow-md"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5 text-[#120d09]" />
-                  <span>{totalCartCount}</span>
-                </button>
-              </div>
-            </header>
-
-            {/* Mobile Expanded Search Bar */}
-            {showMobileSearch && (
-              <div className="sm:hidden px-4 py-2.5 bg-[#17120f] border-b border-[#c88a58]/20 flex items-center gap-2">
-                <div className="relative flex-grow">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search coffee, drinks, treats..."
-                    autoFocus
-                    className="w-full pl-8 pr-3 py-2 bg-[#201915] border border-[#c88a58]/30 rounded-full text-xs font-body text-[#f4ece1] placeholder-[#b8aaa0]/50 focus:outline-none focus:border-[#dda15e]"
-                  />
-                  <Search className="w-3.5 h-3.5 text-[#dda15e] absolute left-3 top-1/2 -translate-y-1/2" />
-                </div>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setShowMobileSearch(false);
-                  }}
-                  className="text-xs text-[#b8aaa0] px-2 py-1"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-
-            {/* Horizontal Scrollable Categories Bar (Warm Pill Style from image) */}
-            <div className="px-4 sm:px-6 py-3 bg-[#110e0c]/90 border-b border-[#c88a58]/15 flex items-center gap-2 overflow-x-auto no-scrollbar flex-shrink-0 z-20">
-              {CATEGORIES.map((cat) => {
-                const isActive = selectedCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => {
-                      playTapSound();
-                      setSelectedCategory(cat);
-                    }}
-                    className={`px-4 py-2 rounded-full text-xs font-coffee font-bold tracking-wider uppercase whitespace-nowrap transition-all duration-200 cursor-pointer min-h-[38px] ${
-                      isActive
-                        ? 'pill-caramel shadow-md scale-102'
-                        : 'bg-[#1c1714] border border-[#c88a58]/20 text-[#b8aaa0] hover:text-[#f4ece1] hover:border-[#dda15e]/50'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Main Products Scrollable Grid */}
-            <main className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 md:p-8 pb-28 lg:pb-8">
-              {/* Category Title Header */}
-              <div className="mb-6 flex items-baseline justify-between border-b border-[#c88a58]/15 pb-3">
-                <div>
-                  <span className="font-mono-meta text-[10px] text-[#dda15e] tracking-widest uppercase">
-                    Atelier Cupping Selection
-                  </span>
-                  <h2 className="font-coffee text-2xl sm:text-3xl font-bold text-[#f4ece1] mt-0.5">
-                    {selectedCategory}
-                    {searchQuery ? ` · Matching "${searchQuery}"` : ''}
-                  </h2>
-                </div>
-                <span className="font-mono-meta text-xs text-[#b8aaa0]">
-                  {filteredProducts.length} items
-                </span>
-              </div>
-
-              {/* Product Cards Grid (Fully Responsive on Mobile & Desktop) */}
-              {filteredProducts.length === 0 ? (
-                <div className="py-20 text-center text-[#b8aaa0] space-y-3">
-                  <Coffee className="w-10 h-10 text-[#dda15e]/60 mx-auto" />
-                  <p className="font-coffee text-lg text-[#f4ece1]">No items found</p>
-                  <p className="font-body text-xs text-[#b8aaa0]/70 max-w-sm mx-auto">
-                    Try searching for another brew or select All Items to view the complete roastery collection.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('All Items');
-                      setSearchQuery('');
-                    }}
-                    className="mt-2 px-5 py-2 rounded-full pill-espresso text-xs font-mono-meta"
-                  >
-                    Reset Filter
-                  </button>
+                  ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      currency={config.currency}
-                      onSelect={handleSelectProduct}
-                    />
-                  ))}
+                // Filtered view by category or search
+                <div className="max-w-5xl mx-auto w-full space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#241F1A]">
+                    <h2 className="font-brand text-xs sm:text-sm font-bold tracking-widest text-[#E5C378] uppercase">
+                      {selectedCategory}
+                      {searchQuery ? ` · Matching "${searchQuery}"` : ''}
+                    </h2>
+                    <button
+                      onClick={() => {
+                        playTapSound();
+                        setSelectedCategory('All Items');
+                        setSearchQuery('');
+                      }}
+                      className="text-xs text-stone-400 hover:text-white min-h-[32px] px-2 flex items-center"
+                    >
+                      View All
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
+                    {filteredProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        currency={config.currency}
+                        onSelect={handleSelectProduct}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
             </main>
 
-            {/* Mobile Sticky Bottom Floating Order Bar */}
-            {cart.length > 0 && (
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-[#0e0c0a] via-[#0e0c0a]/95 to-transparent z-40 animate-slide-up">
-                <div className="max-w-md mx-auto flex items-center justify-between p-3 rounded-full bg-[#1e1714] border border-[#c88a58]/50 shadow-2xl backdrop-blur-lg">
-                  <button
-                    onClick={() => {
-                      playTapSound();
-                      setIsMobileCartOpen(true);
-                    }}
-                    className="flex items-center gap-3 pl-3 text-left"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#2e211a] border border-[#c88a58] flex items-center justify-center text-[#dda15e] font-bold text-xs">
-                      {totalCartCount}
-                    </div>
-                    <div>
-                      <div className="font-coffee text-xs font-bold text-[#f4ece1]">
-                        {activeTable}
-                      </div>
-                      <div className="font-mono-meta text-xs text-[#dda15e] font-bold">
-                        {formattedCurrency}{cartTotal.toFixed(2)}
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      playTapSound();
-                      handlePayNow(false);
-                    }}
-                    className="py-2.5 px-6 rounded-full pill-caramel font-coffee text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-2"
-                  >
-                    <CreditCard className="w-4 h-4 text-[#120d09]" />
-                    <span>Pay Now</span>
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Right Order Panel / Cart Drawer */}
+            <CartDrawer
+              items={cart}
+              currency={config.currency}
+              activeTable={activeTable}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              onClearCart={handleClearCart}
+              onPayNow={() => {
+                setIsMobileCartOpen(false);
+                handlePayNow(false);
+              }}
+              onEditItem={(item) => {
+                const prod = products.find((p) => p.id === item.productId);
+                if (prod) setCustomizingProduct(prod);
+              }}
+              isOpenOnMobile={isMobileCartOpen}
+              onCloseMobile={() => setIsMobileCartOpen(false)}
+            />
           </div>
 
-          {/* Cart Drawer (Desktop persistent sidebar, Mobile sliding bottom sheet) */}
-          <CartDrawer
+          {/* Sticky Mobile Cart Bar at bottom when cart has items */}
+          <MobileCartBar
             items={cart}
             currency={config.currency}
             activeTable={activeTable}
-            activeReaderName={activeReader?.name}
-            isOpenMobile={isMobileCartOpen}
-            onCloseMobile={() => setIsMobileCartOpen(false)}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemoveItem={handleRemoveItem}
-            onClearCart={handleClearCart}
-            onPayNow={() => handlePayNow(false)}
-            onEditItem={(item) => {
-              const prod = products.find((p) => p.id === item.productId);
-              if (prod) setCustomizingProduct(prod);
+            onOpenCart={() => setIsMobileCartOpen(true)}
+            onQuickPay={() => {
+              setIsMobileCartOpen(false);
+              handlePayNow(false);
             }}
           />
         </div>
@@ -838,7 +785,7 @@ export default function App() {
       {/* Inactivity Warning Prompt */}
       {showInactivityWarning && (
         <InactivityWarningModal
-          remainingSeconds={75 - inactivitySeconds}
+          remainingSeconds={60 - inactivitySeconds}
           onContinue={resetInactivity}
           onReset={() => {
             setCart([]);

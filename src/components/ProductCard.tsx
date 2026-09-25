@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, SlidersHorizontal, Coffee } from 'lucide-react';
+import { Plus, SlidersHorizontal } from 'lucide-react';
 import { Product } from '../types/kiosk.ts';
 import { playTapSound } from '../utils/audio.ts';
 
@@ -29,97 +29,90 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={handleClick}
-      className={`group relative flex flex-col justify-between bg-[#191512] rounded-2xl border border-[#c88a58]/20 overflow-hidden transition-all duration-300 select-none cursor-pointer ${
+      className={`group relative flex flex-col justify-between bg-[#14110E] rounded-2xl border border-[#262019] overflow-hidden transition-all text-left select-none touch-manipulation ${
         isOutOfStock
-          ? 'opacity-40 pointer-events-none'
-          : 'hover:border-[#dda15e]/60 hover:shadow-xl hover:shadow-black/70 active:scale-[0.98]'
+          ? 'opacity-55 cursor-not-allowed'
+          : 'hover:border-[#C89B3C]/50 hover:shadow-xl hover:shadow-black/60 active:scale-[0.98] cursor-pointer'
       }`}
     >
       {/* Product Image Container */}
-      <div className="relative w-full aspect-[16/11] bg-[#120f0d] overflow-hidden">
+      <div className="relative w-full aspect-[4/3] bg-[#0E0C0A] overflow-hidden">
         <img
           src={product.image}
           alt={product.name}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 filter brightness-[0.92] contrast-[1.05]"
+          className={`w-full h-full object-cover transition-transform duration-700 ${
+            !isOutOfStock ? 'group-hover:scale-105' : 'grayscale'
+          }`}
           loading="lazy"
         />
 
-        {/* Low Stock Badge */}
-        {isLowStock && (
-          <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-[#241a14]/90 border border-[#c88a58] text-[#dda15e] font-mono-meta text-[10px] uppercase tracking-wider backdrop-blur-sm">
-            Only {product.stock} left
-          </div>
-        )}
-
+        {/* Sold out overlay */}
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-[#0e0c0a]/85 flex items-center justify-center">
-            <span className="font-mono-meta text-xs uppercase tracking-widest text-[#f4ece1]/70 border border-[#f4ece1]/30 px-3 py-1 rounded-full">
+          <div className="absolute inset-0 bg-[#0C0B0A]/80 flex items-center justify-center p-3">
+            <span className="text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-rose-300 border border-rose-500/40 px-2.5 py-1 rounded-lg bg-rose-950/70">
               Sold Out
             </span>
           </div>
         )}
 
-        {/* Category subtle pill on top left */}
-        <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-[#120f0d]/85 backdrop-blur-md border border-[#c88a58]/20 flex items-center gap-1.5 text-[10px] font-mono-meta text-[#dda15e]">
-          <Coffee className="w-3 h-3 text-[#dda15e]" />
-          <span>{product.category}</span>
-        </div>
+        {/* Low Stock Indicator */}
+        {isLowStock && (
+          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-[#C89B3C] text-[#0C0B0A] text-[9px] sm:text-[10px] font-bold tracking-tight shadow-md">
+            Only {product.stock} left
+          </div>
+        )}
       </div>
 
-      {/* Product Details */}
-      <div className="p-4 sm:p-5 flex flex-col flex-grow justify-between">
+      {/* Product Info & Actions */}
+      <div className="p-3 sm:p-3.5 flex flex-col flex-grow justify-between">
         <div>
-          {/* Item Name */}
-          <h3 className="font-coffee text-lg sm:text-xl font-bold text-[#f4ece1] group-hover:text-[#dda15e] transition-colors leading-snug tracking-wide line-clamp-1">
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-[#C89B3C] mb-0.5 font-light">
+            <span>{product.category}</span>
+            {product.dietary && product.dietary.length > 0 && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="truncate text-stone-400">{product.dietary[0]}</span>
+              </>
+            )}
+          </div>
+
+          <h3 className="font-serif-luxury text-sm sm:text-base font-semibold text-[#F3E7C4] tracking-tight leading-snug group-hover:text-[#E5C378] transition-colors line-clamp-1">
             {product.name}
           </h3>
 
-          {/* Description / Cupping Notes */}
-          <p className="font-body text-xs sm:text-sm font-light text-[#b8aaa0] mt-1.5 line-clamp-2 leading-relaxed">
+          <p className="text-[10px] sm:text-[11px] text-stone-400 mt-1 line-clamp-2 leading-relaxed font-light">
             {product.description}
           </p>
-
-          {/* Cupping / Dietary tags */}
-          {product.dietary && product.dietary.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {product.dietary.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-full bg-[#241a14] border border-[#c88a58]/30 font-mono-meta text-[9px] text-[#dda15e] uppercase tracking-wider"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Price & Action Button */}
-        <div className="mt-4 pt-3 border-t border-[#c88a58]/15 flex items-center justify-between">
-          <div className="font-mono-meta text-base sm:text-lg font-bold text-[#dda15e]">
-            {formattedCurrency}{product.price.toFixed(2)}
+        {/* Price & Add Circle Button (matching uploaded mockup) */}
+        <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-[#241F1A] flex items-center justify-between">
+          <div className="text-sm sm:text-base font-semibold text-[#F3E7C4] tabular-nums">
+            {formattedCurrency}
+            {product.price.toFixed(0)}
           </div>
 
           <button
+            type="button"
             disabled={isOutOfStock}
             aria-label={`Add ${product.name} to order`}
-            className={`h-9 px-3.5 rounded-full flex items-center gap-1.5 font-coffee text-xs font-bold uppercase tracking-wider transition-all min-h-[44px] ${
-              hasOptions
-                ? 'bg-[#241a14] border border-[#c88a58]/40 text-[#f4ece1] hover:border-[#dda15e] hover:bg-[#32231b]'
-                : 'pill-caramel hover:brightness-110'
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClick();
+            }}
+            className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all min-h-[36px] min-w-[36px] active:scale-90 ${
+              isOutOfStock
+                ? 'border-stone-800 text-stone-600 cursor-not-allowed'
+                : hasOptions
+                ? 'border-[#3D3328] text-stone-300 hover:border-[#C89B3C] hover:text-[#E5C378] hover:bg-[#1E1914]'
+                : 'border-[#3D3328] text-[#E5C378] hover:bg-[#C89B3C] hover:text-[#0C0B0A] hover:border-[#C89B3C]'
             }`}
           >
             {hasOptions ? (
-              <>
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#dda15e]" />
-                <span className="text-[11px]">Tailor</span>
-              </>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
             ) : (
-              <>
-                <Plus className="w-3.5 h-3.5" />
-                <span className="text-[11px]">Add</span>
-              </>
+              <Plus className="w-4 h-4" />
             )}
           </button>
         </div>
