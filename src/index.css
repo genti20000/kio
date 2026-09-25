@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --bg-coffee: #0e0c0a;
+  --bg-surface: #171412;
+  --bg-card: #1f1a17;
+  --caramel: #c88a58;
+  --amber-gold: #dda15e;
+  --cream: #f4ece1;
+  --cream-muted: #b8aaa0;
+  --cacao: #32221a;
+  --border-coffee: rgba(200, 138, 88, 0.22);
+}
+
+@layer utilities {
+  .font-coffee {
+    font-family: 'Fraunces', 'Cinzel', serif;
+  }
+  .font-body {
+    font-family: 'Outfit', 'Inter', sans-serif;
+  }
+  .font-mono-meta {
+    font-family: 'Space Mono', monospace;
+  }
+  .meta-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: #dda15e;
+  }
+  .pill-caramel {
+    background: linear-gradient(135deg, #e0a96d 0%, #c88a58 100%);
+    color: #120d09;
+    box-shadow: 0 4px 20px rgba(200, 138, 88, 0.28);
+  }
+  .pill-espresso {
+    background: #241a14;
+    border: 1px solid rgba(200, 138, 88, 0.25);
+    color: #f4ece1;
+  }
+  .bg-roastery-pattern {
+    background-color: #0e0c0a;
+    background-image:
+      radial-gradient(ellipse at 80% 0%, rgba(200, 138, 88, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 100%, rgba(140, 90, 50, 0.06) 0%, transparent 60%),
+      linear-gradient(rgba(200, 138, 88, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200, 138, 88, 0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  }
+  /* Hide scrollbar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Mobile & Touchscreen Kiosk Optimization */
+html, body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  background-color: #0e0c0a;
+  color: #f4ece1;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+button, input, select {
+  touch-action: manipulation;
+}

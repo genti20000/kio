@@ -1,0 +1,6 @@
+{
+  "name": "Aura Kiosk - SumUp Self-Service POS",
+  "description": "Self-service touchscreen kiosk with real-time SumUp Cloud terminal payments, live inventory, and digital receipts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
